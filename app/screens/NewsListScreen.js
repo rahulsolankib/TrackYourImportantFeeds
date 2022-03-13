@@ -1,74 +1,120 @@
 import { StyleSheet, Text, View,ScrollView, StatusBar } from 'react-native'
 import React from 'react'
 import { Card,Button, Icon } from 'react-native-elements'
-import colors from '../config/colors';
+import { Linking, ToastAndroid} from 'react-native'
 
 
-export default function NewsListScreen() {
-    const handleViewButtonPress = () => {
-        console.log('Handle this view button pressed');
+export default function NewsListScreen(props) {
+    var arr = (props.value)[0];
+    var setArr = (props.value)[1];
+
+    const handleViewButtonPress = (link) => {
+        Linking.openURL(link);
     }
-    const allTopics = [{ key: 'title1', title: 'Title 1', text: 'Text 1'},{ key: 'title2',title: 'Title 2', text: 'Text 2'},{ key: 'title3',title: 'Title 3', text: 'Text 3'},{ key: 'title4',title: 'Title 4', text: 'Text 4'}];
+    const handleDoneButtonPress = (link) => {
+        const requestOptions = {
+            method: 'DELETE'
+        };
+        let mainURL = (link.split("://"))[1].split('/'); 
+        const prodUrl = 'https://trackyourimportantfeeds.herokuapp.com/clear/'+mainURL[0];
+        fetch(prodUrl,requestOptions)
+            .then((res)=> {
+                console.log('Response code: '+res.status)
+                
+                let newArr = arr.filter((value)=> !value.link.includes(link))
+                setArr(newArr)
+                console.log(newArr)
+                if(res.status === 200) {
+                    ToastAndroid.show('Link marked as done', ToastAndroid.SHORT)
+                }
+                else{
+                    ToastAndroid.show('Please try again', ToastAndroid.SHORT)
+                }
+                }, (errReason)=>{
+                console.log(errReason);
+            })
+    }
 
+    var allTopics = [];
+    if(arr.length !==0)
+        arr.forEach((element, i) => {
+            allTopics.push({
+                key: element.title_text + i,
+                title: element.title_text,
+                text: element.title_text,
+                link: element.link,
+                image_url: element.image_url
+            }); 
+        });
     return (
-        <View style={{flex: 1}}>
-            <View style={{backgroundColor: colors.white, flex: 1}}>
-                <ScrollView>
-                    <View style={styles.container}>
+                <ScrollView style={{marginBottom: 10 ,backgroundColor: '#F6D860'}}>
+                    <View>
                         {
                             allTopics.map(el => <Card key={el.key}>
                                 <Card.Title>{el.title}</Card.Title>
                                 <Card.Divider />
-                                <Card.Image style={styles.cardImage} source={require('../assets/welcome.jpg')}/>
+                                <Card.Image style={styles.cardImage} source={{uri: el.image_url}}/>
                                 <Text style={styles.cardText}>
                                     {el.text}
                                 </Text>
-                                <Button
-                                    onPress={handleViewButtonPress}
-                                    icon={
-                                        <Icon
-                                        name="code"
-                                        color="#ffffff"
-                                        iconStyle={{ marginRight: 10 }}
+                                <View style={{marginLeft: 5, marginRight: 5, flex: 1, flexDirection: 'row', justifyContent: 'center'}}>
+                                    <View style={{justifyContent:'flex-start',  flex: 1}}>
+                                        <Button
+                                            onPress={() => {handleViewButtonPress(el.link)}}
+                                            icon={
+                                                <Icon
+                                                name="code"
+                                                color="#53bdeb"
+                                                iconStyle={{ marginRight: 10 }}
+                                                />
+                                            }
+                                            buttonStyle={{
+                                                borderRadius: 10,
+                                                flex: 1,
+                                                width: '90%',
+                                                backgroundColor: '#d9fdd3'
+                                            }}
+                                            titleStyle={{
+                                                color: "black"
+                                            }}
+                                            title="VIEW"
                                         />
-                                    }
-                                    buttonStyle={{
-                                        borderRadius: 20,
-                                        width: '50%',
-                                        alignSelf: 'center'
-                                    }}
-                                    title="VIEW NOW"
-                                />
+                                    </View>
+                                    <View style={{justifyContent:'flex-end',  flex: 1}}>
+                                        <Button
+                                            onPress={() => {handleDoneButtonPress(el.link)}}
+                                            icon={
+                                                <Icon
+                                                name="checkmark-done-outline"
+                                                color="#53bdeb"
+                                                type='ionicon'
+                                                iconStyle={{ marginRight: 10 }}
+                                                />
+                                            }
+                                            buttonStyle={{
+                                                borderRadius: 10,
+                                                flex: 1,
+                                                width: '90%',
+                                                backgroundColor: "#d9fdd3"
+                                            }}
+                                            titleStyle={{
+                                                color: 'black'
+                                            }}
+                                            title="DONE"
+                                        />
+                                    </View>
+                                </View>
                             </Card>)
                         }
                     </View>
                 </ScrollView>
-            </View>
-            <View style={styles.footerView}>
-                <Button onPress={handleViewButtonPress} buttonStyle={styles.addButton} title="Add Value" />
-            </View>
-            <StatusBar style='auto' />
-        </View>
     )
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1
+        flex: 1, backgroundColor: '#F6D860'
     },
     cardText: { marginTop: 10, marginBottom: 10 },
-    cardImage: {padding: 0},
-    footerView: {
-        width: '100%', 
-        height: 50, 
-        // flexBasis: 100,
-        backgroundColor: colors.white,
-        elevation: 0 
-    },
-    addButton: {
-        width: '100%',
-        height: 70,
-        borderRadius: 0,
-        textAlignVertical: 'top'
-    }
+    cardImage: {padding: 0}
 })
